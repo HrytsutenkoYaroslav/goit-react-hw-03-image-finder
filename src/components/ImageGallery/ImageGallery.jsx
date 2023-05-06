@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import getImages from 'services/getImages';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
@@ -12,36 +12,50 @@ export default class ImageGallery extends Component {
     loading: false,
     totalHits: null,
     page: 1,
+    loadedImagesCount: 0,
   };
 
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.nameSearchImage !== this.props.nameSearchImage) {
-      this.setState({ loading: true, images: null, page: 1, totalHits: null });
+      this.setState({ images: null, page: 1, totalHits: null, loadedImagesCount: 0 });
 
-      getImages(this.props.nameSearchImage, this.state.page)
-        .then(result =>
-          this.setState({
-            images: result.data.hits,
-            totalHits: result.data.totalHits,
+      this.setState({ loading: true }, () => {
+        getImages(this.props.nameSearchImage, this.state.page)
+          .then(result => {
+            const { hits, totalHits } = result.data;
+            this.setState({
+              images: hits,
+              totalHits,
+              loadedImagesCount: hits.length,
+              loading: false,
+            });
           })
-        )
-        .catch(error => console.log(error.message))
-        .finally(() => this.setState({ loading: false }));
+          .catch(error => {
+            console.log(error.message);
+            this.setState({ loading: false });
+          });
+      });
     }
 
     if (
       prevState.page !== this.state.page &&
       prevProps.nameSearchImage === this.props.nameSearchImage
     ) {
-      this.setState({ loading: true });
-      getImages(this.props.nameSearchImage, this.state.page)
-        .then(result =>
-          this.setState(prevState => ({
-            images: [...prevState.images, ...result.data.hits],
-          }))
-        )
-        .catch(error => console.log(error.message))
-        .finally(() => this.setState({ loading: false }));
+      this.setState({ loading: true }, () => {
+        getImages(this.props.nameSearchImage, this.state.page)
+          .then(result => {
+            const { hits } = result.data;
+            this.setState(prevState => ({
+              images: [...prevState.images, ...hits],
+              loadedImagesCount: prevState.loadedImagesCount + hits.length,
+              loading: false,
+            }));
+          })
+          .catch(error => {
+            console.log(error.message);
+            this.setState({ loading: false });
+          });
+      });
     }
   }
 
