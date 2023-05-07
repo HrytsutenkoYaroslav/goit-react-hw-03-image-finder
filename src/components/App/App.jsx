@@ -8,44 +8,67 @@ import getImages from 'services/getImages';
 export default class App extends Component {
   state = {
     nameSearchImage: '',
-    images: null,
+    images: [],
     loading: false,
     totalHits: null,
     page: 1,
   };
 
   handleFormSubmit = nameSearchImage => {
-    this.setState({ nameSearchImage });
-    this.fetchImages(nameSearchImage);
-  };
-
-  fetchImages = (nameSearchImage, page = 1) => {
-    this.setState({ loading: true, images: null, page, totalHits: null });
-
-    getImages(nameSearchImage, page)
-      .then(result =>
-        this.setState({
-          images: result.data.hits,
-          totalHits: result.data.totalHits,
-        })
-      )
-      .catch(error => console.log(error.message))
-      .finally(() => this.setState({ loading: false }));
+    this.setState(
+      {
+        nameSearchImage,
+        images: [],
+        page: 1,
+        totalHits: null,
+      },
+      this.fetchImages
+    );
   };
 
   handleIncrementPage = () => {
+    this.setState(prevState => ({ page: prevState.page + 1 }), this.fetchImages);
+  };
+
+  fetchImages = () => {
     const { nameSearchImage, page } = this.state;
-    const nextPage = page + 1;
-    this.setState({ page: nextPage });
-    this.fetchImages(nameSearchImage, nextPage);
+
+    if (nameSearchImage.trim() === '') {
+      return;
+    }
+
+    this.setState({ loading: true });
+
+    getImages(nameSearchImage, page)
+      .then(result =>
+        this.setState(prevState => ({
+          images: [...prevState.images, ...result.data.hits],
+          totalHits: result.data.totalHits,
+          loading: false,
+        }))
+      )
+      .catch(error => {
+        console.log(error.message);
+        this.setState({ loading: false });
+      });
   };
 
   render() {
-    const {  images, loading, totalHits } = this.state;
+    const { nameSearchImage, images, loading, totalHits } = this.state;
+
+    App.propTypes = {
+      nameSearchImage: PropTypes.string,
+      images: PropTypes.array,
+      loading: PropTypes.bool,
+      totalHits: PropTypes.number,
+      onIncrementPage: PropTypes.func,
+      };
+
     return (
       <AppDiv>
         <Searchbar onSubmit={this.handleFormSubmit} />
         <ImageGallery
+          nameSearchImage={nameSearchImage}
           images={images}
           loading={loading}
           totalHits={totalHits}
@@ -55,11 +78,6 @@ export default class App extends Component {
     );
   }
 }
-
-App.propTypes = {
-  nameSearchImage: PropTypes.string,
-};
-
 
 
 

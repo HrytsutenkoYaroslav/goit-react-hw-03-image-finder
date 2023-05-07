@@ -13,6 +13,7 @@ const Modal = ({ onClose, children }) => {
       }
     };
 
+
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
@@ -20,14 +21,8 @@ const Modal = ({ onClose, children }) => {
     };
   }, [onClose]);
 
-  const handleBackdropClick = event => {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
-
   return createPortal(
-    <Overlay onClick={handleBackdropClick}>
+    <Overlay onClick={Modal.handleBackdropClick}>
       <ModalDiv>{children}</ModalDiv>
     </Overlay>,
     modalRoot
